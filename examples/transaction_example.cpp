@@ -19,8 +19,8 @@ int main() {
         
         // Build script
         ScriptBuilder sb;
-        sb.emitPush(100);
-        sb.emitPush("Hello NEO");
+        sb.pushInteger(100);
+        sb.pushString("Hello NEO");
         tx->setScript(sb.toArray());
         
         // Get transaction hash

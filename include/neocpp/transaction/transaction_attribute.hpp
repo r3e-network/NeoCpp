@@ -46,6 +46,10 @@ public:
         return TransactionAttributeType::HIGH_PRIORITY;
     }
     
+    size_t getSize() const override {
+        return 1; // Just the type byte
+    }
+    
 protected:
     void serializeWithoutType(BinaryWriter& writer) const override {
         // No additional data for high priority
@@ -71,6 +75,8 @@ public:
     uint8_t getCode() const { return code_; }
     const Bytes& getResult() const { return result_; }
     
+    size_t getSize() const override;
+    
 protected:
     void serializeWithoutType(BinaryWriter& writer) const override;
 };
@@ -89,6 +95,10 @@ public:
     
     uint32_t getHeight() const { return height_; }
     
+    size_t getSize() const override {
+        return 1 + 4; // Type byte + uint32
+    }
+    
 protected:
     void serializeWithoutType(BinaryWriter& writer) const override;
 };
@@ -106,6 +116,10 @@ public:
     }
     
     const Hash256& getHash() const { return hash_; }
+    
+    size_t getSize() const override {
+        return 1 + 32; // Type byte + hash256
+    }
     
 protected:
     void serializeWithoutType(BinaryWriter& writer) const override;

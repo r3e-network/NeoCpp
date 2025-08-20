@@ -131,10 +131,16 @@ nlohmann::json NeoRpcClient::getBlockHeader(uint32_t index, bool verbose) {
     return handleResponse(response);
 }
 
-nlohmann::json NeoRpcClient::getCommittee() {
+std::vector<std::string> NeoRpcClient::getCommittee() {
     auto request = createRequest("getcommittee", nlohmann::json::array(), requestId_++);
     auto response = httpService_->post(request);
-    return handleResponse(response);
+    auto result = handleResponse(response);
+    
+    std::vector<std::string> committee;
+    for (const auto& item : result) {
+        committee.push_back(item.get<std::string>());
+    }
+    return committee;
 }
 
 SharedPtr<NeoGetContractStateResponse> NeoRpcClient::getContractState(const Hash160& hash) {
@@ -147,16 +153,17 @@ SharedPtr<NeoGetContractStateResponse> NeoRpcClient::getContractState(const Hash
     return contractResponse;
 }
 
-nlohmann::json NeoRpcClient::getNativeContracts() {
-    auto request = createRequest("getnativecontracts", nlohmann::json::array(), requestId_++);
-    auto response = httpService_->post(request);
-    return handleResponse(response);
-}
 
-nlohmann::json NeoRpcClient::getNextBlockValidators() {
+std::vector<nlohmann::json> NeoRpcClient::getNextBlockValidators() {
     auto request = createRequest("getnextblockvalidators", nlohmann::json::array(), requestId_++);
     auto response = httpService_->post(request);
-    return handleResponse(response);
+    auto result = handleResponse(response);
+    
+    std::vector<nlohmann::json> validators;
+    for (const auto& item : result) {
+        validators.push_back(item);
+    }
+    return validators;
 }
 
 SharedPtr<NeoGetRawTransactionResponse> NeoRpcClient::getRawTransaction(const Hash256& hash, bool verbose) {
@@ -180,19 +187,21 @@ SharedPtr<NeoGetApplicationLogResponse> NeoRpcClient::getApplicationLog(const Ha
     return logResponse;
 }
 
-nlohmann::json NeoRpcClient::getStorage(const Hash160& scriptHash, const std::string& key) {
+std::string NeoRpcClient::getStorage(const Hash160& scriptHash, const std::string& key) {
     Bytes keyBytes = Hex::decode(key);
     std::string base64Key = Base64::encode(keyBytes);
     auto params = nlohmann::json::array({scriptHash.toString(), base64Key});
     auto request = createRequest("getstorage", params, requestId_++);
     auto response = httpService_->post(request);
-    return handleResponse(response);
+    auto result = handleResponse(response);
+    return result.get<std::string>();
 }
 
-nlohmann::json NeoRpcClient::getTransactionHeight(const Hash256& hash) {
-    auto request = createRequest("gettransactionheight", nlohmann::json::array({hash.toString()}), requestId_++);
+uint32_t NeoRpcClient::getTransactionHeight(const Hash256& txId) {
+    auto request = createRequest("gettransactionheight", nlohmann::json::array({txId.toString()}), requestId_++);
     auto response = httpService_->post(request);
-    return handleResponse(response);
+    auto result = handleResponse(response);
+    return result.get<uint32_t>();
 }
 
 SharedPtr<NeoGetUnclaimedGasResponse> NeoRpcClient::getUnclaimedGas(const std::string& address) {
@@ -222,45 +231,16 @@ nlohmann::json NeoRpcClient::getNep17Transfers(const std::string& address, uint6
     return handleResponse(response);
 }
 
-nlohmann::json NeoRpcClient::getNep11Balances(const std::string& address) {
-    auto request = createRequest("getnep11balances", nlohmann::json::array({address}), requestId_++);
-    auto response = httpService_->post(request);
-    return handleResponse(response);
-}
-
-nlohmann::json NeoRpcClient::getNep11Transfers(const std::string& address, uint64_t startTime, uint64_t endTime) {
-    auto params = nlohmann::json::array({address, startTime, endTime});
-    auto request = createRequest("getnep11transfers", params, requestId_++);
-    auto response = httpService_->post(request);
-    return handleResponse(response);
-}
-
-nlohmann::json NeoRpcClient::getNep11Properties(const Hash160& contractHash, const std::string& tokenId) {
-    auto params = nlohmann::json::array({contractHash.toString(), tokenId});
-    auto request = createRequest("getnep11properties", params, requestId_++);
-    auto response = httpService_->post(request);
-    return handleResponse(response);
-}
 
 SharedPtr<NeoInvokeResultResponse> NeoRpcClient::invokeFunction(const Hash160& scriptHash, 
-                                                                const std::string& operation,
-                                                                const std::vector<ContractParameter>& params,
-                                                                const std::vector<SharedPtr<Signer>>& signers) {
-    nlohmann::json paramsArray = nlohmann::json::array();
-    for (const auto& param : params) {
-        paramsArray.push_back(param.toJson());
-    }
-    
-    nlohmann::json signersArray = nlohmann::json::array();
-    for (const auto& signer : signers) {
-        signersArray.push_back(signer->toJson());
-    }
-    
+                                                                const std::string& method,
+                                                                const nlohmann::json& params,
+                                                                const nlohmann::json& signers) {
     auto requestParams = nlohmann::json::array({
         scriptHash.toString(),
-        operation,
-        paramsArray,
-        signersArray
+        method,
+        params,
+        signers
     });
     
     auto request = createRequest("invokefunction", requestParams, requestId_++);
@@ -273,15 +253,10 @@ SharedPtr<NeoInvokeResultResponse> NeoRpcClient::invokeFunction(const Hash160& s
 }
 
 SharedPtr<NeoInvokeResultResponse> NeoRpcClient::invokeScript(const Bytes& script,
-                                                              const std::vector<SharedPtr<Signer>>& signers) {
+                                                              const nlohmann::json& signers) {
     std::string base64Script = Base64::encode(script);
     
-    nlohmann::json signersArray = nlohmann::json::array();
-    for (const auto& signer : signers) {
-        signersArray.push_back(signer->toJson());
-    }
-    
-    auto params = nlohmann::json::array({base64Script, signersArray});
+    auto params = nlohmann::json::array({base64Script, signers});
     auto request = createRequest("invokescript", params, requestId_++);
     auto response = httpService_->post(request);
     auto result = handleResponse(response);
@@ -291,26 +266,10 @@ SharedPtr<NeoInvokeResultResponse> NeoRpcClient::invokeScript(const Bytes& scrip
     return invokeResponse;
 }
 
-SharedPtr<NeoInvokeResultResponse> NeoRpcClient::invokeContractVerify(const Hash160& scriptHash,
-                                                                      const std::vector<ContractParameter>& params,
-                                                                      const std::vector<SharedPtr<Signer>>& signers) {
-    nlohmann::json paramsArray = nlohmann::json::array();
-    for (const auto& param : params) {
-        paramsArray.push_back(param.toJson());
-    }
-    
-    nlohmann::json signersArray = nlohmann::json::array();
-    for (const auto& signer : signers) {
-        signersArray.push_back(signer->toJson());
-    }
-    
-    auto requestParams = nlohmann::json::array({
-        scriptHash.toString(),
-        paramsArray,
-        signersArray
-    });
-    
-    auto request = createRequest("invokecontractverify", requestParams, requestId_++);
+SharedPtr<NeoInvokeResultResponse> NeoRpcClient::invokeScript(const std::string& base64Script,
+                                                              const nlohmann::json& signers) {
+    auto params = nlohmann::json::array({base64Script, signers});
+    auto request = createRequest("invokescript", params, requestId_++);
     auto response = httpService_->post(request);
     auto result = handleResponse(response);
     
@@ -319,18 +278,6 @@ SharedPtr<NeoInvokeResultResponse> NeoRpcClient::invokeContractVerify(const Hash
     return invokeResponse;
 }
 
-nlohmann::json NeoRpcClient::traverseIterator(const std::string& sessionId, const std::string& iteratorId, int count) {
-    auto params = nlohmann::json::array({sessionId, iteratorId, count});
-    auto request = createRequest("traverseiterator", params, requestId_++);
-    auto response = httpService_->post(request);
-    return handleResponse(response);
-}
-
-nlohmann::json NeoRpcClient::terminateSession(const std::string& sessionId) {
-    auto request = createRequest("terminatesession", nlohmann::json::array({sessionId}), requestId_++);
-    auto response = httpService_->post(request);
-    return handleResponse(response);
-}
 
 Hash256 NeoRpcClient::sendRawTransaction(const SharedPtr<Transaction>& transaction) {
     BinaryWriter writer;
@@ -345,14 +292,16 @@ Hash256 NeoRpcClient::sendRawTransaction(const SharedPtr<Transaction>& transacti
     return Hash256::fromHexString(result["hash"].get<std::string>());
 }
 
-nlohmann::json NeoRpcClient::submitBlock(const std::string& blockHex) {
-    auto request = createRequest("submitblock", nlohmann::json::array({blockHex}), requestId_++);
+Hash256 NeoRpcClient::sendRawTransaction(const std::string& hex) {
+    auto request = createRequest("sendrawtransaction", nlohmann::json::array({hex}), requestId_++);
     auto response = httpService_->post(request);
-    return handleResponse(response);
+    auto result = handleResponse(response);
+    
+    return Hash256::fromHexString(result["hash"].get<std::string>());
 }
 
-SharedPtr<NeoGetWalletBalanceResponse> NeoRpcClient::getWalletBalance(const Hash160& assetId) {
-    auto request = createRequest("getwalletbalance", nlohmann::json::array({assetId.toString()}), requestId_++);
+SharedPtr<NeoGetWalletBalanceResponse> NeoRpcClient::getWalletBalance(const Hash160& assetHash, const std::string& address) {
+    auto request = createRequest("getwalletbalance", nlohmann::json::array({assetHash.toString(), address}), requestId_++);
     auto response = httpService_->post(request);
     auto result = handleResponse(response);
     
@@ -361,83 +310,19 @@ SharedPtr<NeoGetWalletBalanceResponse> NeoRpcClient::getWalletBalance(const Hash
     return balanceResponse;
 }
 
-nlohmann::json NeoRpcClient::getWalletUnspent(const Hash160& assetId) {
-    auto request = createRequest("getwalletunspent", nlohmann::json::array({assetId.toString()}), requestId_++);
-    auto response = httpService_->post(request);
-    return handleResponse(response);
-}
 
-nlohmann::json NeoRpcClient::dumpPrivKey(const std::string& address) {
-    auto request = createRequest("dumpprivkey", nlohmann::json::array({address}), requestId_++);
-    auto response = httpService_->post(request);
-    return handleResponse(response);
-}
-
-nlohmann::json NeoRpcClient::getNewAddress() {
-    auto request = createRequest("getnewaddress", nlohmann::json::array(), requestId_++);
-    auto response = httpService_->post(request);
-    return handleResponse(response);
-}
-
-nlohmann::json NeoRpcClient::importPrivKey(const std::string& wif) {
-    auto request = createRequest("importprivkey", nlohmann::json::array({wif}), requestId_++);
-    auto response = httpService_->post(request);
-    return handleResponse(response);
-}
-
-nlohmann::json NeoRpcClient::listAddress() {
-    auto request = createRequest("listaddress", nlohmann::json::array(), requestId_++);
-    auto response = httpService_->post(request);
-    return handleResponse(response);
-}
-
-nlohmann::json NeoRpcClient::openWallet(const std::string& path, const std::string& password) {
-    auto params = nlohmann::json::array({path, password});
-    auto request = createRequest("openwallet", params, requestId_++);
-    auto response = httpService_->post(request);
-    return handleResponse(response);
-}
-
-nlohmann::json NeoRpcClient::closeWallet() {
-    auto request = createRequest("closewallet", nlohmann::json::array(), requestId_++);
-    auto response = httpService_->post(request);
-    return handleResponse(response);
-}
-
-nlohmann::json NeoRpcClient::sendFrom(const Hash160& assetId, const std::string& from, 
-                                      const std::string& to, const std::string& amount) {
-    auto params = nlohmann::json::array({assetId.toString(), from, to, amount});
-    auto request = createRequest("sendfrom", params, requestId_++);
-    auto response = httpService_->post(request);
-    return handleResponse(response);
-}
-
-nlohmann::json NeoRpcClient::sendMany(const nlohmann::json& transfers) {
-    auto request = createRequest("sendmany", nlohmann::json::array({transfers}), requestId_++);
-    auto response = httpService_->post(request);
-    return handleResponse(response);
-}
-
-nlohmann::json NeoRpcClient::sendToAddress(const Hash160& assetId, const std::string& address, 
-                                           const std::string& amount) {
-    auto params = nlohmann::json::array({assetId.toString(), address, amount});
-    auto request = createRequest("sendtoaddress", params, requestId_++);
-    auto response = httpService_->post(request);
-    return handleResponse(response);
-}
-
-nlohmann::json NeoRpcClient::calculateNetworkFee(const Bytes& transaction) {
-    std::string base64Tx = Base64::encode(transaction);
+int64_t NeoRpcClient::calculateNetworkFee(const SharedPtr<Transaction>& transaction) {
+    BinaryWriter writer;
+    transaction->serialize(writer);
+    Bytes rawTx = writer.toArray();
+    std::string base64Tx = Base64::encode(rawTx);
+    
     auto request = createRequest("calculatenetworkfee", nlohmann::json::array({base64Tx}), requestId_++);
     auto response = httpService_->post(request);
-    return handleResponse(response);
+    auto result = handleResponse(response);
+    return result["networkfee"].get<int64_t>();
 }
 
-nlohmann::json NeoRpcClient::getMemPool(bool shouldGetUnverified) {
-    auto request = createRequest("getrawmempool", nlohmann::json::array({shouldGetUnverified}), requestId_++);
-    auto response = httpService_->post(request);
-    return handleResponse(response);
-}
 
 nlohmann::json NeoRpcClient::getStateHeight() {
     auto request = createRequest("getstateheight", nlohmann::json::array(), requestId_++);
@@ -460,23 +345,61 @@ nlohmann::json NeoRpcClient::getProof(const Hash256& rootHash, const Hash160& co
     return handleResponse(response);
 }
 
-nlohmann::json NeoRpcClient::verifyProof(const Hash256& rootHash, const std::string& proofData) {
-    auto params = nlohmann::json::array({rootHash.toString(), proofData});
+bool NeoRpcClient::verifyProof(const Hash256& rootHash, const std::string& proof) {
+    auto params = nlohmann::json::array({rootHash.toString(), proof});
     auto request = createRequest("verifyproof", params, requestId_++);
     auto response = httpService_->post(request);
-    return handleResponse(response);
+    auto result = handleResponse(response);
+    return result.get<bool>();
 }
 
-nlohmann::json NeoRpcClient::listPlugins() {
-    auto request = createRequest("listplugins", nlohmann::json::array(), requestId_++);
+
+nlohmann::json NeoRpcClient::findStorage(const Hash160& scriptHash, const std::string& prefix) {
+    auto params = nlohmann::json::array({scriptHash.toString(), prefix});
+    auto request = createRequest("findstorage", params, requestId_++);
     auto response = httpService_->post(request);
     return handleResponse(response);
 }
 
-nlohmann::json NeoRpcClient::getSettings() {
-    auto request = createRequest("getsettings", nlohmann::json::array(), requestId_++);
+nlohmann::json NeoRpcClient::sendRequest(const std::string& method, const nlohmann::json& params) {
+    auto request = createRequest(method, params, requestId_++);
     auto response = httpService_->post(request);
     return handleResponse(response);
+}
+
+std::vector<nlohmann::json> NeoRpcClient::sendBatch(const std::vector<std::pair<std::string, nlohmann::json>>& requests) {
+    nlohmann::json batch = nlohmann::json::array();
+    for (const auto& [method, params] : requests) {
+        batch.push_back(createRequest(method, params, requestId_++));
+    }
+    
+    auto response = httpService_->post(batch);
+    
+    std::vector<nlohmann::json> results;
+    for (const auto& item : response) {
+        results.push_back(handleResponse(item));
+    }
+    return results;
+}
+
+int NeoRpcClient::getNextRequestId() {
+    return requestId_++;
+}
+
+nlohmann::json NeoRpcClient::buildRequest(const std::string& method, const nlohmann::json& params) {
+    return createRequest(method, params, requestId_++);
+}
+
+nlohmann::json NeoRpcClient::parseResponse(const std::string& response) {
+    return nlohmann::json::parse(response);
+}
+
+void NeoRpcClient::handleError(const nlohmann::json& error) {
+    std::string message = "RPC error";
+    if (error.contains("message")) {
+        message = error["message"].get<std::string>();
+    }
+    throw RpcException(message);
 }
 
 } // namespace neocpp

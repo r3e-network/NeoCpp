@@ -2,6 +2,7 @@
 #include "neocpp/transaction/witness_rule.hpp"
 #include "neocpp/serialization/binary_writer.hpp"
 #include "neocpp/serialization/binary_reader.hpp"
+#include "neocpp/utils/hex.hpp"
 #include "neocpp/exceptions.hpp"
 
 namespace neocpp {
@@ -125,6 +126,37 @@ bool Signer::operator==(const Signer& other) const {
 
 bool Signer::operator!=(const Signer& other) const {
     return !(*this == other);
+}
+
+nlohmann::json Signer::toJson() const {
+    nlohmann::json json;
+    json["account"] = account_.toString();
+    json["scopes"] = WitnessScopeHelper::toJsonString(scopes_);
+    
+    if (!allowedContracts_.empty()) {
+        nlohmann::json contracts = nlohmann::json::array();
+        for (const auto& contract : allowedContracts_) {
+            contracts.push_back(contract.toString());
+        }
+        json["allowedcontracts"] = contracts;
+    }
+    
+    if (!allowedGroups_.empty()) {
+        nlohmann::json groups = nlohmann::json::array();
+        for (const auto& group : allowedGroups_) {
+            groups.push_back(Hex::encode(group));
+        }
+        json["allowedgroups"] = groups;
+    }
+    
+    if (!rules_.empty()) {
+        nlohmann::json rulesJson = nlohmann::json::array();
+        // Note: Would need to implement toJson for WitnessRule
+        // For now, just return empty array
+        json["rules"] = rulesJson;
+    }
+    
+    return json;
 }
 
 } // namespace neocpp

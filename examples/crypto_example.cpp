@@ -55,8 +55,8 @@ int main() {
         Bytes data = {0x01, 0x02, 0x03, 0x04};
         printHex("SHA256", HashUtils::sha256(data));
         printHex("RIPEMD160", HashUtils::ripemd160(data));
-        printHex("Hash256", HashUtils::hash256(data));
-        printHex("Hash160", HashUtils::hash160(data));
+        printHex("Double SHA256", HashUtils::doubleSha256(data));
+        printHex("SHA256 then RIPEMD160", HashUtils::sha256ThenRipemd160(data));
         
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;

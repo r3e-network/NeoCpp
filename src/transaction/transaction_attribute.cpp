@@ -39,6 +39,19 @@ SharedPtr<TransactionAttribute> TransactionAttribute::deserialize(BinaryReader& 
     }
 }
 
+size_t OracleResponseAttribute::getSize() const {
+    // Type byte + uint64 (id) + uint8 (code) + var bytes (result)
+    size_t varIntSize = 1; // Default for values < 0xFD
+    if (result_.size() >= 0xFD && result_.size() <= 0xFFFF) {
+        varIntSize = 3;
+    } else if (result_.size() > 0xFFFF && result_.size() <= 0xFFFFFFFF) {
+        varIntSize = 5;
+    } else if (result_.size() > 0xFFFFFFFF) {
+        varIntSize = 9;
+    }
+    return 1 + 8 + 1 + varIntSize + result_.size();
+}
+
 void OracleResponseAttribute::serializeWithoutType(BinaryWriter& writer) const {
     writer.writeUInt64(id_);
     writer.writeUInt8(code_);

@@ -150,7 +150,7 @@ void NeoGetContractStateResponse::parseJson(const nlohmann::json& json) {
         updateCounter_ = json["updatecounter"].get<int>();
     }
     if (json.contains("hash")) {
-        hash_ = Hash160::fromHexString(json["hash"].get<std::string>());
+        hash_ = Hash160(json["hash"].get<std::string>());
     }
     if (json.contains("nef")) {
         nef_ = json["nef"];
@@ -169,7 +169,7 @@ void NeoGetNep17BalancesResponse::parseJson(const nlohmann::json& json) {
     if (json.contains("balance")) {
         for (const auto& balance : json["balance"]) {
             NeoNep17Balance bal;
-            bal.assetHash = Hash160::fromHexString(balance["assethash"].get<std::string>());
+            bal.assetHash = Hash160(balance["assethash"].get<std::string>());
             bal.amount = balance["amount"].get<std::string>();
             bal.lastUpdatedBlock = balance["lastupdatedblock"].get<uint32_t>();
             balances_.push_back(bal);

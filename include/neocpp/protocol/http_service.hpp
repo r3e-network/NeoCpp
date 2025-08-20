@@ -90,10 +90,6 @@ public:
     /// @param callback The response callback
     /// @param headers Optional additional headers
     void postAsync(const std::string& url, const std::string& body, ResponseCallback callback, const Headers& headers = {});
-    
-private:
-    class Impl;
-    std::unique_ptr<Impl> impl_;
 };
 
 } // namespace neocpp

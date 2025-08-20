@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <memory>
+#include <nlohmann/json.hpp>
 #include "neocpp/types/types.hpp"
 #include "neocpp/types/hash160.hpp"
 #include "neocpp/transaction/witness_scope.hpp"
@@ -71,6 +72,9 @@ public:
     // Comparison operators
     bool operator==(const Signer& other) const;
     bool operator!=(const Signer& other) const;
+    
+    /// Convert to JSON representation
+    nlohmann::json toJson() const;
 };
 
 } // namespace neocpp
