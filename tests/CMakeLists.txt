@@ -1,0 +1,51 @@
+# Test configuration for NeoCpp
+
+# Collect test files that exist
+set(TEST_SOURCES main.cpp)
+
+# Add test files if they exist
+file(GLOB CRYPTO_TESTS crypto/*.cpp)
+file(GLOB TYPES_TESTS types/*.cpp)
+file(GLOB SERIALIZATION_TESTS serialization/*.cpp)
+file(GLOB SCRIPT_TESTS script/*.cpp)
+file(GLOB TRANSACTION_TESTS transaction/*.cpp)
+file(GLOB WALLET_TESTS wallet/*.cpp)
+file(GLOB UTILS_TESTS utils/*.cpp)
+
+# Combine all test sources
+list(APPEND TEST_SOURCES 
+    ${CRYPTO_TESTS}
+    ${TYPES_TESTS}
+    ${SERIALIZATION_TESTS}
+    ${SCRIPT_TESTS}
+    ${TRANSACTION_TESTS}
+    ${WALLET_TESTS}
+    ${UTILS_TESTS}
+)
+
+# Remove stub template if it exists
+list(REMOVE_ITEM TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/stub_test_template.cpp)
+
+# Add test executable
+add_executable(neocpp_tests ${TEST_SOURCES})
+
+# Link with NeoCpp library and dependencies
+target_link_libraries(neocpp_tests
+    PRIVATE
+    neocpp
+    Catch2::Catch2
+    OpenSSL::SSL
+    OpenSSL::Crypto
+    CURL::libcurl
+    nlohmann_json::nlohmann_json
+)
+
+# Include directories
+target_include_directories(neocpp_tests
+    PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+)
+
+# Add test to CTest
+include(CTest)
+add_test(NAME neocpp_tests COMMAND neocpp_tests)

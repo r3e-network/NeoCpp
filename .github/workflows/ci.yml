@@ -1,0 +1,150 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        build_type: [Debug, Release]
+        
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake g++ libssl-dev
+        
+    - name: Install dependencies (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install cmake openssl
+        
+    - name: Configure CMake
+      run: |
+        mkdir -p build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        
+    - name: Build
+      run: |
+        cd build
+        make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)
+        
+    - name: Run tests
+      run: |
+        cd build
+        ./tests/neocpp_tests --reporter junit --out test-results.xml
+        
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-${{ matrix.os }}-${{ matrix.build_type }}
+        path: build/test-results.xml
+
+  memory-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake g++ libssl-dev valgrind
+        
+    - name: Configure with Debug
+      run: |
+        mkdir -p build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Debug
+        
+    - name: Build
+      run: |
+        cd build
+        make -j$(nproc)
+        
+    - name: Run tests with Valgrind
+      run: |
+        cd build
+        valgrind --leak-check=full --error-exitcode=1 ./tests/neocpp_tests
+        
+  sanitizers:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake g++ libssl-dev
+        
+    - name: Configure with AddressSanitizer
+      run: |
+        mkdir -p build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Debug \
+                 -DCMAKE_CXX_FLAGS="-fsanitize=address -fno-omit-frame-pointer" \
+                 -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address"
+        
+    - name: Build
+      run: |
+        cd build
+        make -j$(nproc)
+        
+    - name: Run tests with AddressSanitizer
+      run: |
+        cd build
+        ASAN_OPTIONS=detect_leaks=1 ./tests/neocpp_tests
+        
+  coverage:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake g++ libssl-dev lcov
+        
+    - name: Configure with coverage
+      run: |
+        mkdir -p build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Debug \
+                 -DCMAKE_CXX_FLAGS="--coverage -fprofile-arcs -ftest-coverage"
+        
+    - name: Build
+      run: |
+        cd build
+        make -j$(nproc)
+        
+    - name: Run tests
+      run: |
+        cd build
+        ./tests/neocpp_tests
+        
+    - name: Generate coverage report
+      run: |
+        cd build
+        lcov --capture --directory . --output-file coverage.info
+        lcov --remove coverage.info '/usr/*' --output-file coverage.info
+        lcov --list coverage.info
+        
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./build/coverage.info
+        flags: unittests
+        name: codecov-neocpp
