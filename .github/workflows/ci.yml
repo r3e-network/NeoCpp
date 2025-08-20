@@ -23,12 +23,12 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ libssl-dev libcurl4-openssl-dev
+        sudo apt-get install -y cmake g++ libssl-dev libcurl4-openssl-dev nlohmann-json3-dev
         
     - name: Install dependencies (macOS)
       if: runner.os == 'macOS'
       run: |
-        brew install cmake openssl@3 curl
+        brew install cmake openssl@3 curl nlohmann-json
         echo "OPENSSL_ROOT_DIR=$(brew --prefix openssl@3)" >> $GITHUB_ENV
         echo "CURL_ROOT=$(brew --prefix curl)" >> $GITHUB_ENV
         
@@ -40,10 +40,12 @@ jobs:
           cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
                    -DOPENSSL_ROOT_DIR=${{ env.OPENSSL_ROOT_DIR }} \
                    -DCURL_ROOT=${{ env.CURL_ROOT }} \
-                   -DBUILD_TESTS=ON
+                   -DBUILD_TESTS=ON \
+                   -DBUILD_EXAMPLES=ON
         else
           cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-                   -DBUILD_TESTS=ON
+                   -DBUILD_TESTS=ON \
+                   -DBUILD_EXAMPLES=ON
         fi
         
     - name: Build
@@ -68,17 +70,19 @@ jobs:
     
     steps:
     - uses: actions/checkout@v3
+      with:
+        submodules: recursive
     
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ libssl-dev libcurl4-openssl-dev valgrind
+        sudo apt-get install -y cmake g++ libssl-dev libcurl4-openssl-dev nlohmann-json3-dev valgrind
         
     - name: Configure with Debug
       run: |
         mkdir -p build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Debug
+        cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON
         
     - name: Build
       run: |
@@ -95,17 +99,20 @@ jobs:
     
     steps:
     - uses: actions/checkout@v3
+      with:
+        submodules: recursive
     
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ libssl-dev libcurl4-openssl-dev
+        sudo apt-get install -y cmake g++ libssl-dev libcurl4-openssl-dev nlohmann-json3-dev
         
     - name: Configure with AddressSanitizer
       run: |
         mkdir -p build
         cd build
         cmake .. -DCMAKE_BUILD_TYPE=Debug \
+                 -DBUILD_TESTS=ON \
                  -DCMAKE_CXX_FLAGS="-fsanitize=address -fno-omit-frame-pointer" \
                  -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address"
         
@@ -124,17 +131,20 @@ jobs:
     
     steps:
     - uses: actions/checkout@v3
+      with:
+        submodules: recursive
     
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ libssl-dev libcurl4-openssl-dev lcov
+        sudo apt-get install -y cmake g++ libssl-dev libcurl4-openssl-dev nlohmann-json3-dev lcov
         
     - name: Configure with coverage
       run: |
         mkdir -p build
         cd build
         cmake .. -DCMAKE_BUILD_TYPE=Debug \
+                 -DBUILD_TESTS=ON \
                  -DCMAKE_CXX_FLAGS="--coverage -fprofile-arcs -ftest-coverage"
         
     - name: Build

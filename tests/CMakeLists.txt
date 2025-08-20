@@ -36,9 +36,13 @@ target_link_libraries(neocpp_tests
     Catch2::Catch2
     OpenSSL::SSL
     OpenSSL::Crypto
-    CURL::libcurl
     nlohmann_json::nlohmann_json
 )
+
+# Link CURL if available
+if(CURL_FOUND)
+    target_link_libraries(neocpp_tests PRIVATE CURL::libcurl)
+endif()
 
 # Include directories
 target_include_directories(neocpp_tests
