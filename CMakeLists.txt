@@ -27,17 +27,20 @@ find_package(OpenSSL REQUIRED)
 include(FetchContent)
 
 # Try to find nlohmann/json, if not found, fetch it
-find_package(nlohmann_json QUIET)
+find_package(nlohmann_json 3.0 QUIET)
 if(NOT nlohmann_json_FOUND)
     message(STATUS "nlohmann_json not found, fetching from GitHub...")
     FetchContent_Declare(
         json
         GIT_REPOSITORY https://github.com/nlohmann/json.git
         GIT_TAG v3.11.3
+        GIT_SHALLOW TRUE
     )
     set(JSON_BuildTests OFF CACHE INTERNAL "")
     set(JSON_Install OFF CACHE INTERNAL "")
     FetchContent_MakeAvailable(json)
+    # Create an alias to match the installed target name
+    add_library(nlohmann_json::nlohmann_json ALIAS nlohmann_json)
 else()
     message(STATUS "Found nlohmann_json: ${nlohmann_json_VERSION}")
 endif()
@@ -92,14 +95,8 @@ if(HAVE_CURL)
     target_compile_definitions(neocpp PUBLIC HAVE_CURL=1)
 endif()
 
-# Add json as interface dependency
-if(NOT nlohmann_json_FOUND)
-    target_include_directories(neocpp PUBLIC 
-        $<BUILD_INTERFACE:${json_SOURCE_DIR}/include>
-    )
-else()
-    target_link_libraries(neocpp PUBLIC nlohmann_json::nlohmann_json)
-endif()
+# Link json library
+target_link_libraries(neocpp PUBLIC nlohmann_json::nlohmann_json)
 
 # Set properties
 set_target_properties(neocpp PROPERTIES

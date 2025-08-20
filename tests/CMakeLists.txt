@@ -34,9 +34,6 @@ target_link_libraries(neocpp_tests
     PRIVATE
     neocpp
     Catch2::Catch2
-    OpenSSL::SSL
-    OpenSSL::Crypto
-    nlohmann_json::nlohmann_json
 )
 
 # Link CURL if available
