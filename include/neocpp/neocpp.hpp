@@ -35,29 +35,15 @@
 
 // Transaction
 #include "neocpp/transaction/transaction.hpp"
-#include "neocpp/transaction/transaction_builder.hpp"
 #include "neocpp/transaction/signer.hpp"
 #include "neocpp/transaction/witness.hpp"
 #include "neocpp/transaction/witness_scope.hpp"
-#include "neocpp/transaction/account_signer.hpp"
-#include "neocpp/transaction/contract_signer.hpp"
-
-// Contract
-#include "neocpp/contract/smart_contract.hpp"
-#include "neocpp/contract/gas_token.hpp"
-#include "neocpp/contract/neo_token.hpp"
-#include "neocpp/contract/fungible_token.hpp"
-#include "neocpp/contract/non_fungible_token.hpp"
-#include "neocpp/contract/neo_name_service.hpp"
-#include "neocpp/contract/nef_file.hpp"
-#include "neocpp/contract/contract_manifest.hpp"
+#include "neocpp/transaction/witness_rule.hpp"
+#include "neocpp/transaction/transaction_attribute.hpp"
 
 // Script
 #include "neocpp/script/script_builder.hpp"
 #include "neocpp/script/op_code.hpp"
-#include "neocpp/script/interop_service.hpp"
-#include "neocpp/script/verification_script.hpp"
-#include "neocpp/script/invocation_script.hpp"
 
 // Serialization
 #include "neocpp/serialization/binary_writer.hpp"
@@ -65,9 +51,11 @@
 #include "neocpp/serialization/neo_serializable.hpp"
 
 // Protocol/RPC
+#include "neocpp/protocol/neo_cpp.hpp"
 #include "neocpp/protocol/neo_rpc_client.hpp"
 #include "neocpp/protocol/http_service.hpp"
-#include "neocpp/protocol/response_types.hpp"
+#include "neocpp/protocol/response_types_impl.hpp"
+#include "neocpp/protocol/stack_item.hpp"
 
 // Utils
 #include "neocpp/utils/base58.hpp"

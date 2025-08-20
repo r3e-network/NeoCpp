@@ -33,6 +33,9 @@ public:
     /// Destructor
     ~HttpService();
     
+    /// Get the base URL
+    const std::string& getUrl() const { return baseUrl_; }
+    
     /// Set timeout for requests
     /// @param seconds Timeout in seconds
     void setTimeout(int seconds);
