@@ -11,34 +11,39 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-13]
+        os: [ubuntu-latest, macos-12]
         build_type: [Debug, Release]
         
     steps:
     - uses: actions/checkout@v3
+      with:
+        submodules: recursive
     
     - name: Install dependencies (Ubuntu)
-      if: matrix.os == 'ubuntu-latest'
+      if: runner.os == 'Linux'
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ libssl-dev nlohmann-json3-dev
+        sudo apt-get install -y cmake g++ libssl-dev libcurl4-openssl-dev
         
     - name: Install dependencies (macOS)
-      if: matrix.os == 'macos-13'
+      if: runner.os == 'macOS'
       run: |
-        brew update
-        brew install cmake openssl@3 nlohmann-json
-        echo "OPENSSL_ROOT_DIR=/usr/local/opt/openssl@3" >> $GITHUB_ENV
+        brew install cmake openssl@3 curl
+        echo "OPENSSL_ROOT_DIR=$(brew --prefix openssl@3)" >> $GITHUB_ENV
+        echo "CURL_ROOT=$(brew --prefix curl)" >> $GITHUB_ENV
         
     - name: Configure CMake
       run: |
         mkdir -p build
         cd build
-        if [ "${{ matrix.os }}" = "macos-13" ]; then
+        if [ "${{ runner.os }}" = "macOS" ]; then
           cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-                   -DOPENSSL_ROOT_DIR=${{ env.OPENSSL_ROOT_DIR }}
+                   -DOPENSSL_ROOT_DIR=${{ env.OPENSSL_ROOT_DIR }} \
+                   -DCURL_ROOT=${{ env.CURL_ROOT }} \
+                   -DBUILD_TESTS=ON
         else
-          cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+                   -DBUILD_TESTS=ON
         fi
         
     - name: Build
@@ -67,7 +72,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ libssl-dev nlohmann-json3-dev valgrind
+        sudo apt-get install -y cmake g++ libssl-dev libcurl4-openssl-dev valgrind
         
     - name: Configure with Debug
       run: |
@@ -94,7 +99,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ libssl-dev nlohmann-json3-dev
+        sudo apt-get install -y cmake g++ libssl-dev libcurl4-openssl-dev
         
     - name: Configure with AddressSanitizer
       run: |
@@ -123,7 +128,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ libssl-dev nlohmann-json3-dev lcov
+        sudo apt-get install -y cmake g++ libssl-dev libcurl4-openssl-dev lcov
         
     - name: Configure with coverage
       run: |

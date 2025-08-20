@@ -46,6 +46,9 @@ endif()
 find_package(CURL QUIET)
 if(NOT CURL_FOUND)
     message(WARNING "CURL not found, HTTP functionality will be disabled")
+    set(HAVE_CURL FALSE)
+else()
+    set(HAVE_CURL TRUE)
 endif()
 
 # Fetch Catch2 for testing
@@ -58,12 +61,9 @@ if(BUILD_TESTS)
     FetchContent_MakeAvailable(Catch2)
 endif()
 
-FetchContent_MakeAvailable(json)
-
 # Include directories
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${json_SOURCE_DIR}/include
 )
 
 # Collect source files
@@ -84,13 +84,22 @@ target_link_libraries(neocpp PUBLIC
     Threads::Threads
     OpenSSL::SSL
     OpenSSL::Crypto
-    CURL::libcurl
 )
 
+# Link CURL if available
+if(HAVE_CURL)
+    target_link_libraries(neocpp PUBLIC CURL::libcurl)
+    target_compile_definitions(neocpp PUBLIC HAVE_CURL=1)
+endif()
+
 # Add json as interface dependency
-target_include_directories(neocpp PUBLIC 
-    $<BUILD_INTERFACE:${json_SOURCE_DIR}/include>
-)
+if(NOT nlohmann_json_FOUND)
+    target_include_directories(neocpp PUBLIC 
+        $<BUILD_INTERFACE:${json_SOURCE_DIR}/include>
+    )
+else()
+    target_link_libraries(neocpp PUBLIC nlohmann_json::nlohmann_json)
+endif()
 
 # Set properties
 set_target_properties(neocpp PROPERTIES
