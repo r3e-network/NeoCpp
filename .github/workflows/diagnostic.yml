@@ -1,0 +1,79 @@
+name: Diagnostic
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: System info
+      run: |
+        echo "=== System Information ==="
+        uname -a
+        echo "=== CPU Info ==="
+        lscpu || echo "lscpu not available"
+        echo "=== Memory Info ==="
+        free -h || echo "free not available"
+        echo "=== Disk Space ==="
+        df -h
+        
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Check build tools
+      run: |
+        echo "=== Build Tools ==="
+        which cmake && cmake --version || echo "cmake not found"
+        which g++ && g++ --version || echo "g++ not found"
+        which gcc && gcc --version || echo "gcc not found"
+        
+    - name: Check package availability
+      run: |
+        echo "=== Available Packages ==="
+        apt-cache search libssl-dev | head -5
+        apt-cache search libcurl | head -5
+        apt-cache search nlohmann | head -5
+        
+    - name: Install dependencies step by step
+      run: |
+        echo "=== Update apt ==="
+        sudo apt-get update || echo "apt update failed"
+        
+        echo "=== Install cmake ==="
+        sudo apt-get install -y cmake || echo "cmake install failed"
+        
+        echo "=== Install g++ ==="
+        sudo apt-get install -y g++ || echo "g++ install failed"
+        
+        echo "=== Install libssl-dev ==="
+        sudo apt-get install -y libssl-dev || echo "libssl-dev install failed"
+        
+        echo "=== Install libcurl ==="
+        sudo apt-get install -y libcurl4-openssl-dev || echo "libcurl install failed"
+        
+        echo "=== Install nlohmann-json ==="
+        sudo apt-get install -y nlohmann-json3-dev || echo "nlohmann-json install failed"
+    
+    - name: Test CMake configuration
+      run: |
+        echo "=== Test CMake ==="
+        mkdir -p build
+        cd build
+        cmake .. -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF 2>&1 | tee cmake.log
+        echo "=== CMake Exit Code: $? ==="
+        if [ -f CMakeFiles/CMakeError.log ]; then
+          echo "=== CMake Error Log ==="
+          cat CMakeFiles/CMakeError.log
+        fi
+        
+    - name: List source files
+      run: |
+        echo "=== Source files ==="
+        find src -name "*.cpp" | head -20
+        echo "=== Header files ==="
+        find include -name "*.hpp" | head -20
