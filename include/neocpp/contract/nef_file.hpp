@@ -62,6 +62,10 @@ public:
     /// @return The NEF file
     static NefFile fromBase64(const std::string& base64);
     
+    /// Convert to bytes
+    /// @return The serialized NEF bytes
+    Bytes toBytes() const;
+    
     // NeoSerializable interface
     size_t getSize() const override;
     void serialize(BinaryWriter& writer) const override;

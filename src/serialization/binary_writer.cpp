@@ -4,7 +4,11 @@
 namespace neocpp {
 
 void BinaryWriter::writeByte(uint8_t value) {
-    buffer_.push_back(value);
+    if (stream_) {
+        stream_->write(reinterpret_cast<const char*>(&value), 1);
+    } else {
+        buffer_.push_back(value);
+    }
 }
 
 void BinaryWriter::writeBool(bool value) {
@@ -12,11 +16,19 @@ void BinaryWriter::writeBool(bool value) {
 }
 
 void BinaryWriter::writeBytes(const Bytes& bytes) {
-    buffer_.insert(buffer_.end(), bytes.begin(), bytes.end());
+    if (stream_) {
+        stream_->write(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+    } else {
+        buffer_.insert(buffer_.end(), bytes.begin(), bytes.end());
+    }
 }
 
 void BinaryWriter::writeBytes(const uint8_t* data, size_t length) {
-    buffer_.insert(buffer_.end(), data, data + length);
+    if (stream_) {
+        stream_->write(reinterpret_cast<const char*>(data), length);
+    } else {
+        buffer_.insert(buffer_.end(), data, data + length);
+    }
 }
 
 void BinaryWriter::writeInt8(int8_t value) {

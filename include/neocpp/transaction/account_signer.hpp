@@ -5,8 +5,9 @@
 
 namespace neocpp {
 
-// Forward declaration
+// Forward declarations
 class Account;
+class Witness;
 
 /// Account-based transaction signer
 class AccountSigner : public Signer {

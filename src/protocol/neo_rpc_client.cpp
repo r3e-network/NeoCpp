@@ -402,4 +402,19 @@ void NeoRpcClient::handleError(const nlohmann::json& error) {
     throw RpcException(message);
 }
 
+nlohmann::json NeoRpcClient::traverseIterator(const std::string& sessionId, const std::string& iteratorId, uint32_t count) {
+    nlohmann::json params = nlohmann::json::array();
+    params.push_back(sessionId);
+    params.push_back(iteratorId);
+    params.push_back(count);
+    return sendRequest("traverseiterator", params);
+}
+
+bool NeoRpcClient::terminateSession(const std::string& sessionId) {
+    nlohmann::json params = nlohmann::json::array();
+    params.push_back(sessionId);
+    auto result = sendRequest("terminatesession", params);
+    return result.contains("result") && result["result"].get<bool>();
+}
+
 } // namespace neocpp

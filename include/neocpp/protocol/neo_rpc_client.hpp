@@ -243,6 +243,20 @@ public:
     /// @return Current state height information
     nlohmann::json getStateHeight();
     
+    // Iterator methods
+    
+    /// Traverse iterator
+    /// @param sessionId The session ID
+    /// @param iteratorId The iterator ID
+    /// @param count The number of items to retrieve
+    /// @return Iterator values
+    nlohmann::json traverseIterator(const std::string& sessionId, const std::string& iteratorId, uint32_t count);
+    
+    /// Terminate session
+    /// @param sessionId The session ID to terminate
+    /// @return Success status
+    bool terminateSession(const std::string& sessionId);
+    
     // Raw JSON-RPC methods
     
     /// Send raw JSON-RPC request

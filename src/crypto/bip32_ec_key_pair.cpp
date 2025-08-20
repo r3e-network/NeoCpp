@@ -1,4 +1,5 @@
 #include "neocpp/crypto/bip32_ec_key_pair.hpp"
+#include "neocpp/crypto/bip39.hpp"
 #include "neocpp/crypto/hash.hpp"
 #include "neocpp/utils/base58.hpp"
 #include "neocpp/exceptions.hpp"
@@ -55,9 +56,9 @@ SharedPtr<Bip32ECKeyPair> Bip32ECKeyPair::fromSeed(const Bytes& seed) {
 
 SharedPtr<Bip32ECKeyPair> Bip32ECKeyPair::fromMnemonic(const std::string& mnemonic, 
                                                        const std::string& passphrase) {
-    // BIP39 mnemonic to seed conversion
-    // This is a simplified implementation - full BIP39 requires PBKDF2
-    throw IllegalArgumentException("BIP39 mnemonic support not yet implemented");
+    // Use the BIP39 implementation to convert mnemonic to seed
+    Bytes seed = Bip39::mnemonicToSeed(mnemonic, passphrase);
+    return fromSeed(seed);
 }
 
 SharedPtr<Bip32ECKeyPair> Bip32ECKeyPair::deriveChild(uint32_t index, bool hardened) {

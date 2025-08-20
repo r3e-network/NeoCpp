@@ -4,6 +4,7 @@
 #include <string>
 #include <cstdint>
 #include <cstring>
+#include <iostream>
 #include "neocpp/types/types.hpp"
 
 namespace neocpp {
@@ -12,9 +13,11 @@ namespace neocpp {
 class BinaryWriter {
 private:
     std::vector<uint8_t> buffer_;
+    std::ostream* stream_;
     
 public:
-    BinaryWriter() = default;
+    BinaryWriter() : stream_(nullptr) {}
+    explicit BinaryWriter(std::ostream& stream) : stream_(&stream) {}
     ~BinaryWriter() = default;
     
     /// Write a single byte
