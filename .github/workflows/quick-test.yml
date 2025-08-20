@@ -21,7 +21,9 @@ jobs:
     
     - name: Configure with verbose output
       run: |
-        cmake -S . -B build -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF || (echo "CMake failed"; cat CMakeFiles/CMakeError.log; exit 1)
+        mkdir -p build
+        cd build
+        cmake .. -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF || (echo "CMake failed"; if [ -f CMakeFiles/CMakeError.log ]; then cat CMakeFiles/CMakeError.log; fi; exit 1)
     
     - name: Build library only
       run: |
