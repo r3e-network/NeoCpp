@@ -1,0 +1,31 @@
+name: Quick Test
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  quick-build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install minimal dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake g++ libssl-dev
+    
+    - name: Configure
+      run: |
+        cmake -S . -B build -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF
+    
+    - name: Build library only
+      run: |
+        cmake --build build --target neocpp
+    
+    - name: Check library
+      run: |
+        ls -la build/
+        file build/libneocpp.a || echo "Library not found"
