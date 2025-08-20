@@ -2,6 +2,11 @@
 build/
 cmake-build-*/
 out/
+Build/
+Debug/
+Release/
+MinSizeRel/
+RelWithDebInfo/
 
 # IDE files
 .vscode/
@@ -10,14 +15,22 @@ out/
 *.swo
 *~
 .DS_Store
+*.sublime-*
+*.code-workspace
+.clangd/
+.cache/
 
 # Compiled files
 *.o
+*.obj
 *.a
+*.lib
 *.so
 *.dylib
 *.dll
 *.exe
+*.out
+*.app
 
 # Test coverage
 *.gcda
@@ -25,10 +38,73 @@ out/
 *.gcov
 coverage/
 *.info
+*.profraw
+*.profdata
 
 # Dependencies
 _deps/
+vcpkg_installed/
+conan/
+.conan/
 
 # Package files
 *.tar.gz
 *.zip
+*.7z
+*.dmg
+*.iso
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
+*.cmake
+!cmake/*.cmake
+
+# Testing
+Testing/
+test_results/
+*.log
+
+# Documentation
+docs/html/
+docs/latex/
+Doxyfile.bak
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.Python
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.orig
+
+# OS specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.Trash-*
+.nfs*
+
+# Binary files created during testing
+simple_test
+test_sdk
+test_production
+tests/test_runner
+tests/*_test
+
+# Local configuration
+.env
+.env.local
+*.local

@@ -11,7 +11,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-13]
         build_type: [Debug, Release]
         
     steps:
@@ -21,18 +21,25 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ libssl-dev
+        sudo apt-get install -y cmake g++ libssl-dev nlohmann-json3-dev
         
     - name: Install dependencies (macOS)
-      if: matrix.os == 'macos-latest'
+      if: matrix.os == 'macos-13'
       run: |
-        brew install cmake openssl
+        brew update
+        brew install cmake openssl@3 nlohmann-json
+        echo "OPENSSL_ROOT_DIR=/usr/local/opt/openssl@3" >> $GITHUB_ENV
         
     - name: Configure CMake
       run: |
         mkdir -p build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        if [ "${{ matrix.os }}" = "macos-13" ]; then
+          cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+                   -DOPENSSL_ROOT_DIR=${{ env.OPENSSL_ROOT_DIR }}
+        else
+          cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        fi
         
     - name: Build
       run: |
@@ -60,7 +67,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ libssl-dev valgrind
+        sudo apt-get install -y cmake g++ libssl-dev nlohmann-json3-dev valgrind
         
     - name: Configure with Debug
       run: |
@@ -87,7 +94,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ libssl-dev
+        sudo apt-get install -y cmake g++ libssl-dev nlohmann-json3-dev
         
     - name: Configure with AddressSanitizer
       run: |
@@ -116,7 +123,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ libssl-dev lcov
+        sudo apt-get install -y cmake g++ libssl-dev nlohmann-json3-dev lcov
         
     - name: Configure with coverage
       run: |

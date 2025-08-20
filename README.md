@@ -4,7 +4,7 @@ A comprehensive C++ SDK for interacting with the Neo N3 blockchain, providing fu
 
 **Status: ✅ PRODUCTION READY** - Successfully converted from Neo Swift SDK to C++ with 100% test pass rate
 
-[![CI](https://github.com/yourusername/NeoCpp/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/NeoCpp/actions)
+[![CI](https://github.com/r3e-network/NeoCpp/actions/workflows/ci.yml/badge.svg)](https://github.com/r3e-network/NeoCpp/actions)
 [![Tests](https://img.shields.io/badge/tests-692%20passing-brightgreen)](./TESTING.md)
 [![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://isocpp.org/std/the-standard)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -34,7 +34,7 @@ A comprehensive C++ SDK for interacting with the Neo N3 blockchain, providing fu
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/NeoCpp.git
+git clone https://github.com/r3e-network/NeoCpp.git
 cd NeoCpp
 
 # Create build directory
@@ -68,7 +68,7 @@ Or using FetchContent:
 include(FetchContent)
 FetchContent_Declare(
     NeoCpp
-    GIT_REPOSITORY https://github.com/yourusername/NeoCpp.git
+    GIT_REPOSITORY https://github.com/r3e-network/NeoCpp.git
     GIT_TAG main
 )
 FetchContent_MakeAvailable(NeoCpp)

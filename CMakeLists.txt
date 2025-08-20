@@ -26,17 +26,27 @@ find_package(OpenSSL REQUIRED)
 # Include FetchContent for external dependencies
 include(FetchContent)
 
-# Fetch nlohmann/json
-FetchContent_Declare(
-    json
-    GIT_REPOSITORY https://github.com/nlohmann/json.git
-    GIT_TAG v3.11.3
-)
-set(JSON_BuildTests OFF CACHE INTERNAL "")
-set(JSON_Install OFF CACHE INTERNAL "")
+# Try to find nlohmann/json, if not found, fetch it
+find_package(nlohmann_json QUIET)
+if(NOT nlohmann_json_FOUND)
+    message(STATUS "nlohmann_json not found, fetching from GitHub...")
+    FetchContent_Declare(
+        json
+        GIT_REPOSITORY https://github.com/nlohmann/json.git
+        GIT_TAG v3.11.3
+    )
+    set(JSON_BuildTests OFF CACHE INTERNAL "")
+    set(JSON_Install OFF CACHE INTERNAL "")
+    FetchContent_MakeAvailable(json)
+else()
+    message(STATUS "Found nlohmann_json: ${nlohmann_json_VERSION}")
+endif()
 
 # Fetch libcurl for HTTP requests
-find_package(CURL REQUIRED)
+find_package(CURL QUIET)
+if(NOT CURL_FOUND)
+    message(WARNING "CURL not found, HTTP functionality will be disabled")
+endif()
 
 # Fetch Catch2 for testing
 if(BUILD_TESTS)
