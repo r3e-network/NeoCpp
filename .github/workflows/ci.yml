@@ -23,7 +23,7 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ libssl-dev libcurl4-openssl-dev nlohmann-json3-dev
+        sudo apt-get install -y cmake g++ libssl-dev libcurl4-openssl-dev nlohmann-json3-dev pkg-config
         
     - name: Install dependencies (macOS)
       if: runner.os == 'macOS'
@@ -53,10 +53,23 @@ jobs:
         cd build
         make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)
         
+    - name: List build artifacts
+      run: |
+        cd build
+        echo "Build directory contents:"
+        ls -la
+        echo "Tests directory:"
+        ls -la tests/ || echo "Tests directory not found"
+        
     - name: Run tests
       run: |
         cd build
-        ./tests/neocpp_tests --reporter junit --out test-results.xml
+        if [ -f ./tests/neocpp_tests ]; then
+          ./tests/neocpp_tests --reporter JUnit --out test-results.xml
+        else
+          echo "Test executable not found!"
+          exit 1
+        fi
         
     - name: Upload test results
       uses: actions/upload-artifact@v3
@@ -76,7 +89,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ libssl-dev libcurl4-openssl-dev nlohmann-json3-dev valgrind
+        sudo apt-get install -y cmake g++ libssl-dev libcurl4-openssl-dev nlohmann-json3-dev pkg-config valgrind
         
     - name: Configure with Debug
       run: |
@@ -92,7 +105,12 @@ jobs:
     - name: Run tests with Valgrind
       run: |
         cd build
-        valgrind --leak-check=full --error-exitcode=1 ./tests/neocpp_tests
+        if [ -f ./tests/neocpp_tests ]; then
+          valgrind --leak-check=full --error-exitcode=1 ./tests/neocpp_tests --reporter console
+        else
+          echo "Test executable not found!"
+          exit 1
+        fi
         
   sanitizers:
     runs-on: ubuntu-latest
@@ -105,7 +123,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ libssl-dev libcurl4-openssl-dev nlohmann-json3-dev
+        sudo apt-get install -y cmake g++ libssl-dev libcurl4-openssl-dev nlohmann-json3-dev pkg-config
         
     - name: Configure with AddressSanitizer
       run: |
@@ -124,7 +142,12 @@ jobs:
     - name: Run tests with AddressSanitizer
       run: |
         cd build
-        ASAN_OPTIONS=detect_leaks=1 ./tests/neocpp_tests
+        if [ -f ./tests/neocpp_tests ]; then
+          ASAN_OPTIONS=detect_leaks=1 ./tests/neocpp_tests --reporter console
+        else
+          echo "Test executable not found!"
+          exit 1
+        fi
         
   coverage:
     runs-on: ubuntu-latest
@@ -137,7 +160,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ libssl-dev libcurl4-openssl-dev nlohmann-json3-dev lcov
+        sudo apt-get install -y cmake g++ libssl-dev libcurl4-openssl-dev nlohmann-json3-dev pkg-config lcov
         
     - name: Configure with coverage
       run: |
@@ -155,7 +178,12 @@ jobs:
     - name: Run tests
       run: |
         cd build
-        ./tests/neocpp_tests
+        if [ -f ./tests/neocpp_tests ]; then
+          ./tests/neocpp_tests --reporter console
+        else
+          echo "Test executable not found!"
+          exit 1
+        fi
         
     - name: Generate coverage report
       run: |
