@@ -11,6 +11,8 @@ file(GLOB SCRIPT_TESTS script/*.cpp)
 file(GLOB TRANSACTION_TESTS transaction/*.cpp)
 file(GLOB WALLET_TESTS wallet/*.cpp)
 file(GLOB UTILS_TESTS utils/*.cpp)
+file(GLOB LOGGER_TESTS logger/*.cpp)
+file(GLOB ERROR_TESTS error/*.cpp)
 
 # Combine all test sources
 list(APPEND TEST_SOURCES 
@@ -21,6 +23,8 @@ list(APPEND TEST_SOURCES
     ${TRANSACTION_TESTS}
     ${WALLET_TESTS}
     ${UTILS_TESTS}
+    ${LOGGER_TESTS}
+    ${ERROR_TESTS}
 )
 
 # Remove stub template if it exists
