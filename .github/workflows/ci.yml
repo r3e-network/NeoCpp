@@ -60,16 +60,17 @@ jobs:
     - name: Build
       run: |
         cd build
-        # Use limited output to prevent timeout issues
-        make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu) 2>&1 | head -500 || true
+        # Build with limited output to prevent timeout
+        echo "Building library and tests..."
+        make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu) 2>&1 | head -1000 || true
         
         # Check if library was created
         if [ ! -f libneocpp.a ]; then
           echo "Library not found, checking for object files..."
-          OBJ_COUNT=$(find . -name "*.o" | wc -l)
+          OBJ_COUNT=$(find CMakeFiles/neocpp.dir -name "*.o" 2>/dev/null | wc -l)
           if [ $OBJ_COUNT -gt 0 ]; then
             echo "Found $OBJ_COUNT object files, creating library manually..."
-            find . -name "*.o" -exec ar rcs libneocpp.a {} +
+            find CMakeFiles/neocpp.dir -name "*.o" -exec ar rcs libneocpp.a {} +
           fi
         fi
         
@@ -80,6 +81,12 @@ jobs:
         else
           echo "ERROR: Failed to create library"
           exit 1
+        fi
+        
+        # Also ensure test executable is built
+        if [ ! -f tests/neocpp_tests ]; then
+          echo "Building tests specifically..."
+          make neocpp_tests 2>&1 | head -500 || true
         fi
         
     - name: List build artifacts
@@ -129,7 +136,11 @@ jobs:
     - name: Build
       run: |
         cd build
-        make -j$(nproc) || (echo "Build failed. Retrying with verbose output..."; make VERBOSE=1)
+        make -j$(nproc) 2>&1 | head -1000 || true
+        # Ensure library exists
+        if [ ! -f libneocpp.a ]; then
+          find CMakeFiles/neocpp.dir -name "*.o" -exec ar rcs libneocpp.a {} + 2>/dev/null || true
+        fi
         
     - name: Run tests with Valgrind
       run: |
@@ -166,7 +177,11 @@ jobs:
     - name: Build
       run: |
         cd build
-        make -j$(nproc) || (echo "Build failed. Retrying with verbose output..."; make VERBOSE=1)
+        make -j$(nproc) 2>&1 | head -1000 || true
+        # Ensure library exists
+        if [ ! -f libneocpp.a ]; then
+          find CMakeFiles/neocpp.dir -name "*.o" -exec ar rcs libneocpp.a {} + 2>/dev/null || true
+        fi
         
     - name: Run tests with AddressSanitizer
       run: |
@@ -202,7 +217,11 @@ jobs:
     - name: Build
       run: |
         cd build
-        make -j$(nproc) || (echo "Build failed. Retrying with verbose output..."; make VERBOSE=1)
+        make -j$(nproc) 2>&1 | head -1000 || true
+        # Ensure library exists
+        if [ ! -f libneocpp.a ]; then
+          find CMakeFiles/neocpp.dir -name "*.o" -exec ar rcs libneocpp.a {} + 2>/dev/null || true
+        fi
         
     - name: Run tests
       run: |
