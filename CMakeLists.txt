@@ -73,6 +73,16 @@ include_directories(
 file(GLOB_RECURSE NEOCPP_HEADERS include/neocpp/*.hpp)
 file(GLOB_RECURSE NEOCPP_SOURCES src/*.cpp)
 
+# Debug: Print number of source files found
+list(LENGTH NEOCPP_SOURCES NUM_SOURCES)
+list(LENGTH NEOCPP_HEADERS NUM_HEADERS)
+message(STATUS "Found ${NUM_SOURCES} source files and ${NUM_HEADERS} header files")
+
+# Ensure we have source files
+if(NUM_SOURCES EQUAL 0)
+    message(FATAL_ERROR "No source files found in src/ directory!")
+endif()
+
 # Create library
 add_library(neocpp ${NEOCPP_SOURCES} ${NEOCPP_HEADERS})
 
