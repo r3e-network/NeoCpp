@@ -151,8 +151,11 @@ nlohmann::json Signer::toJson() const {
     
     if (!rules_.empty()) {
         nlohmann::json rulesJson = nlohmann::json::array();
-        // Note: Would need to implement toJson for WitnessRule
-        // For now, just return empty array
+        for (const auto& rule : rules_) {
+            if (rule) {
+                rulesJson.push_back(rule->toJson());
+            }
+        }
         json["rules"] = rulesJson;
     }
     

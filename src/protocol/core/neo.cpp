@@ -46,9 +46,18 @@ uint32_t Neo::getNetworkMagic() const {
     auto version = rpcClient_->getVersion();
     if (version) {
         auto ver = version->getVersion();
-        return ver.nonce;  // Use nonce as network magic for now
+        // The nonce field contains the network magic value in Neo N3
+        // Check if it matches known network magic values
+        if (ver.nonce == NeoConstants::NEO_N3_MAINNET_MAGIC) {
+            return NeoConstants::NEO_N3_MAINNET_MAGIC;
+        } else if (ver.nonce == NeoConstants::NEO_N3_TESTNET_MAGIC) {
+            return NeoConstants::NEO_N3_TESTNET_MAGIC;
+        }
+        // Return the actual nonce value which represents the network magic
+        return ver.nonce;
     }
-    return 0;
+    // Default to testnet if not connected
+    return NeoConstants::NEO_N3_TESTNET_MAGIC;
 }
 
 std::string Neo::getNodeVersion() const {

@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <vector>
+#include <nlohmann/json.hpp>
 #include "neocpp/types/types.hpp"
 #include "neocpp/types/hash160.hpp"
 #include "neocpp/serialization/neo_serializable.hpp"
@@ -112,6 +113,9 @@ public:
     size_t getSize() const override;
     void serialize(BinaryWriter& writer) const override;
     static SharedPtr<WitnessRule> deserialize(BinaryReader& reader);
+    
+    /// Convert to JSON
+    nlohmann::json toJson() const;
 };
 
 } // namespace neocpp

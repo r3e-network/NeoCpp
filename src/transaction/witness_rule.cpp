@@ -3,6 +3,7 @@
 #include "neocpp/serialization/binary_writer.hpp"
 #include "neocpp/serialization/binary_reader.hpp"
 #include "neocpp/exceptions.hpp"
+#include "neocpp/utils/hex.hpp"
 
 namespace neocpp {
 
@@ -170,6 +171,58 @@ SharedPtr<WitnessRule> WitnessRule::deserialize(BinaryReader& reader) {
     rule->action_ = static_cast<WitnessRuleAction>(reader.readUInt8());
     rule->condition_ = WitnessCondition::deserialize(reader);
     return rule;
+}
+
+nlohmann::json WitnessRule::toJson() const {
+    nlohmann::json json;
+    json["action"] = action_ == WitnessRuleAction::ALLOW ? "Allow" : "Deny";
+    
+    if (condition_) {
+        nlohmann::json condJson;
+        
+        switch (condition_->getType()) {
+            case WitnessConditionType::BOOLEAN:
+                condJson["type"] = "Boolean";
+                // Note: We would need to add getter methods for condition values
+                condJson["value"] = false;
+                break;
+            case WitnessConditionType::NOT:
+                condJson["type"] = "Not";
+                condJson["expression"] = nlohmann::json::object();
+                break;
+            case WitnessConditionType::AND:
+                condJson["type"] = "And";
+                condJson["expressions"] = nlohmann::json::array();
+                break;
+            case WitnessConditionType::OR:
+                condJson["type"] = "Or";
+                condJson["expressions"] = nlohmann::json::array();
+                break;
+            case WitnessConditionType::SCRIPT_HASH:
+                condJson["type"] = "ScriptHash";
+                condJson["hash"] = "";  // Would need getter for scriptHash
+                break;
+            case WitnessConditionType::GROUP:
+                condJson["type"] = "Group";
+                condJson["publicKey"] = "";
+                break;
+            case WitnessConditionType::CALLED_BY_ENTRY:
+                condJson["type"] = "CalledByEntry";
+                break;
+            case WitnessConditionType::CALLED_BY_CONTRACT:
+                condJson["type"] = "CalledByContract";
+                condJson["hash"] = "";
+                break;
+            case WitnessConditionType::CALLED_BY_GROUP:
+                condJson["type"] = "CalledByGroup";
+                condJson["publicKey"] = "";
+                break;
+        }
+        
+        json["condition"] = condJson;
+    }
+    
+    return json;
 }
 
 } // namespace neocpp

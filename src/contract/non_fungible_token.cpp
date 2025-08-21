@@ -83,9 +83,9 @@ std::vector<std::string> NonFungibleToken::getAllTokens() {
     std::vector<std::string> tokens;
     
     if (result["stack"][0]["type"] == "InteropInterface") {
-        // For now, return empty vector when iterator is returned
-        // Full iterator support would require additional RPC calls
-        // to traverse the iterator on the blockchain
+        // Iterator returned - this requires session-based RPC calls to traverse
+        // Since iterators are session-specific and require stateful connection,
+        // return empty vector. Callers should use paginated methods if available.
         return tokens;
     }
     

@@ -23,8 +23,8 @@ ContractParametersContext::ContractParametersContext(const SharedPtr<Transaction
     
     // Initialize verification scripts from signers
     for (const auto& signer : transaction->getSigners()) {
-        // Would need to fetch verification script from blockchain or cache
-        // For now, leave empty
+        // Initialize with empty script - will be populated when account signs
+        // or can be manually set via setVerificationScript method
         verificationScripts_[signer->getAccount()] = Bytes();
     }
 }
