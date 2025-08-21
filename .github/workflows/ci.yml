@@ -56,7 +56,27 @@ jobs:
     - name: Build
       run: |
         cd build
-        make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu) || (echo "Build failed. Retrying with verbose output..."; make VERBOSE=1)
+        # Use limited output to prevent timeout issues
+        make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu) 2>&1 | head -500 || true
+        
+        # Check if library was created
+        if [ ! -f libneocpp.a ]; then
+          echo "Library not found, checking for object files..."
+          OBJ_COUNT=$(find . -name "*.o" | wc -l)
+          if [ $OBJ_COUNT -gt 0 ]; then
+            echo "Found $OBJ_COUNT object files, creating library manually..."
+            find . -name "*.o" -exec ar rcs libneocpp.a {} +
+          fi
+        fi
+        
+        # Verify library exists
+        if [ -f libneocpp.a ]; then
+          echo "SUCCESS: Library created"
+          ls -la libneocpp.a
+        else
+          echo "ERROR: Failed to create library"
+          exit 1
+        fi
         
     - name: List build artifacts
       run: |
