@@ -2,6 +2,7 @@
 #include "neocpp/serialization/binary_writer.hpp"
 #include "neocpp/serialization/binary_reader.hpp"
 #include "neocpp/utils/hex.hpp"
+#include "neocpp/exceptions.hpp"
 
 namespace neocpp {
 
@@ -61,7 +62,7 @@ SharedPtr<WitnessCondition> WitnessCondition::deserialize(BinaryReader& reader) 
         }
         
         default:
-            throw std::runtime_error("Unknown witness condition type");
+            throw DeserializationException("Unknown witness condition type: " + std::to_string(static_cast<int>(type)));
     }
 }
 
