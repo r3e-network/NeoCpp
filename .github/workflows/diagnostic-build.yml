@@ -1,0 +1,73 @@
+name: Diagnostic Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Check file system
+      run: |
+        echo "=== Current directory ==="
+        pwd
+        echo "=== Directory contents ==="
+        ls -la
+        echo "=== Source directory ==="
+        ls -la src/ | head -20
+        echo "=== Include directory ==="
+        ls -la include/neocpp/ | head -20
+        echo "=== Count source files ==="
+        find src -name "*.cpp" | wc -l
+        echo "=== Count header files ==="
+        find include -name "*.hpp" | wc -l
+    
+    - name: Install bare minimum
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake g++ libssl-dev
+    
+    - name: Try manual compilation
+      run: |
+        echo "=== Trying to compile a single file ==="
+        g++ -c -I./include -std=c++17 src/neo_constants.cpp -o test.o
+        if [ -f test.o ]; then
+          echo "SUCCESS: Compiled neo_constants.cpp"
+          ls -la test.o
+        else
+          echo "FAILED to compile"
+        fi
+    
+    - name: Try CMake with maximum verbosity
+      run: |
+        mkdir build && cd build
+        cmake .. -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF --debug-output 2>&1 | tee cmake.log
+        echo "=== Last 50 lines of CMake log ==="
+        tail -50 cmake.log
+        echo "=== Check if Makefile was created ==="
+        if [ -f Makefile ]; then
+          echo "Makefile exists"
+          echo "=== Makefile size ==="
+          wc -l Makefile
+        else
+          echo "No Makefile created!"
+        fi
+    
+    - name: Try building with make
+      run: |
+        cd build
+        if [ -f Makefile ]; then
+          echo "=== Attempting make ==="
+          make VERBOSE=1 2>&1 | head -100
+          echo "=== Check for any .o files ==="
+          find . -name "*.o" -ls
+          echo "=== Check for any .a files ==="
+          find . -name "*.a" -ls
+        else
+          echo "Cannot build - no Makefile"
+        fi
