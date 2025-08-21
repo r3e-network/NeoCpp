@@ -35,9 +35,31 @@ jobs:
     - name: Build library
       run: |
         cd build
-        make neocpp VERBOSE=1
+        make neocpp VERBOSE=1 2>&1 | tee build.log || true
+        echo "=== Build completed with exit code: $? ==="
+    
+    - name: Upload build log
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-log
+        path: build/build.log
+    
+    - name: Show build errors
+      if: always()
+      run: |
+        cd build
+        echo "=== Checking for compilation errors ==="
+        grep -i "error:" build.log || echo "No error: patterns found"
+        echo "=== Last 50 lines of build log ==="
+        tail -50 build.log
     
     - name: Verify library
       run: |
-        ls -la build/libneocpp.a
-        file build/libneocpp.a
+        if [ -f build/libneocpp.a ]; then
+          ls -la build/libneocpp.a
+          file build/libneocpp.a
+        else
+          echo "Library not created!"
+          exit 1
+        fi
