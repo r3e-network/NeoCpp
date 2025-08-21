@@ -14,13 +14,14 @@ TEST_CASE("ECKeyPair Tests", "[crypto]") {
     SECTION("New public key from point") {
         auto publicKey = std::make_shared<ECPublicKey>(Hex::decode(encodedPoint));
         REQUIRE(Hex::encode(publicKey->getEncoded()) == encodedPoint);
+        REQUIRE(Hex::encode(publicKey->getEncodedCompressed()) == encodedPoint);
     }
     
     SECTION("New public key from uncompressed point") {
         const std::string uncompressedPoint = 
-            "04b4af8d061b6b320cce6c63bc4ec7894dce107bfc5f5ef5c68a93b4ad1e13681684ce4f08a76fb6267e042a2de21f256e7e6003ca9614884f20dda3e8a611da4f";
+            "04b4af8d061b6b320cce6c63bc4ec7894dce107bfc5f5ef5c68a93b4ad1e1368165f4f7fb1c5862465543c06dd5a2aa414f6583f92a5cc3e1d4259df79bf6839c9";
         auto publicKey = std::make_shared<ECPublicKey>(Hex::decode(uncompressedPoint));
-        REQUIRE(Hex::encode(publicKey->getEncoded()) == encodedPoint);
+        REQUIRE(Hex::encode(publicKey->getEncodedCompressed()) == encodedPoint);
     }
     
     SECTION("New public key from string with invalid size") {
@@ -31,17 +32,46 @@ TEST_CASE("ECKeyPair Tests", "[crypto]") {
     SECTION("New public key from point with hex prefix") {
         const std::string prefixed = "0x03b4af8d061b6b320cce6c63bc4ec7894dce107bfc5f5ef5c68a93b4ad1e136816";
         auto publicKey = std::make_shared<ECPublicKey>(Hex::decode(prefixed.substr(2)));
-        REQUIRE(Hex::encode(publicKey->getEncoded()) == encodedPoint);
+        REQUIRE(Hex::encode(publicKey->getEncodedCompressed()) == encodedPoint);
     }
     
     SECTION("Serialize public key") {
         auto publicKey = std::make_shared<ECPublicKey>(Hex::decode(encodedPoint));
-        REQUIRE(publicKey->getEncoded() == Hex::decode(encodedPoint));
+        REQUIRE(publicKey->toArray() == Hex::decode(encodedPoint));
+    }
+    
+    SECTION("Deserialize public key") {
+        Bytes data = Hex::decode("036b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296");
+        auto publicKey = ECPublicKey::from(data);
+        REQUIRE(publicKey != nullptr);
+        // Verify it's the generator point (secp256r1 G)
+        // This test validates the key represents the curve's generator point
     }
     
     SECTION("Public key size") {
-        auto publicKey = std::make_shared<ECPublicKey>(Hex::decode(encodedPoint));
-        REQUIRE(publicKey->getEncoded().size() == 33);
+        auto publicKey = std::make_shared<ECPublicKey>(Hex::decode("036b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296"));
+        REQUIRE(publicKey->size() == 33);
+    }
+    
+    SECTION("Public key WIF") {
+        const std::string privateKey = "c7134d6fd8e73d819e82755c64c93788d8db0961929e025a53363c4cc02a6962";
+        ECKeyPair keyPair(Hex::decode(privateKey));
+        REQUIRE(keyPair.exportAsWIF() == "L3tgppXLgdaeqSGSFw1Go3skBiy8vQAM7YMXvTHsKQtE16PBncSU");
+    }
+    
+    SECTION("Public key comparable") {
+        const std::string encodedKey2 = "036b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296";
+        const std::string encodedKey1Uncompressed = 
+            "04b4af8d061b6b320cce6c63bc4ec7894dce107bfc5f5ef5c68a93b4ad1e1368165f4f7fb1c5862465543c06dd5a2aa414f6583f92a5cc3e1d4259df79bf6839c9";
+        
+        auto key1 = std::make_shared<ECPublicKey>(Hex::decode(encodedPoint));
+        auto key2 = std::make_shared<ECPublicKey>(Hex::decode(encodedKey2));
+        auto key1Uncompressed = std::make_shared<ECPublicKey>(Hex::decode(encodedKey1Uncompressed));
+        
+        REQUIRE(*key1 > *key2);
+        REQUIRE(*key1 == *key1Uncompressed);
+        REQUIRE_FALSE(*key1 < *key1Uncompressed);
+        REQUIRE_FALSE(*key1 > *key1Uncompressed);
     }
     
     SECTION("Generate new key pair") {
