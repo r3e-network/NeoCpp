@@ -79,9 +79,16 @@ int OpCodeHelper::getOperandSize(OpCode opcode) {
         case OpCode::JMPLT:
         case OpCode::JMPLE:
         case OpCode::CALL:
+        case OpCode::PUSHDATA1:
             return 1;
             
         case OpCode::PUSHINT16:
+        case OpCode::PUSHDATA2:
+            return 2;
+            
+        case OpCode::PUSHINT32:
+        case OpCode::PUSHA:
+        case OpCode::TRY:
         case OpCode::JMP_L:
         case OpCode::JMPIF_L:
         case OpCode::JMPIFNOT_L:
@@ -92,13 +99,8 @@ int OpCodeHelper::getOperandSize(OpCode opcode) {
         case OpCode::JMPLT_L:
         case OpCode::JMPLE_L:
         case OpCode::CALL_L:
-        case OpCode::PUSHDATA1:
-            return 2;
-            
-        case OpCode::PUSHINT32:
-        case OpCode::PUSHA:
-        case OpCode::TRY:
-        case OpCode::PUSHDATA2:
+        case OpCode::PUSHDATA4:
+        case OpCode::SYSCALL:
             return 4;
             
         case OpCode::PUSHINT64:
@@ -110,12 +112,6 @@ int OpCodeHelper::getOperandSize(OpCode opcode) {
             
         case OpCode::PUSHINT256:
             return 32;
-            
-        case OpCode::PUSHDATA4:
-            return 4;
-            
-        case OpCode::SYSCALL:
-            return 4;
             
         default:
             return 0;
