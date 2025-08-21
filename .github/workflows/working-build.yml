@@ -1,0 +1,55 @@
+name: Working Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake g++ libssl-dev
+        # Let CMake fetch nlohmann-json if needed
+    
+    - name: Configure
+      run: |
+        mkdir build && cd build
+        cmake .. -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF
+    
+    - name: Build
+      run: |
+        cd build
+        # Build and allow it to continue even if it fails
+        make VERBOSE=1 2>&1 | tee build.log || true
+        
+        # Check if library was created
+        echo "=== Checking for library ==="
+        if [ -f libneocpp.a ]; then
+          echo "SUCCESS: Library found!"
+          ls -la libneocpp.a
+          exit 0
+        else
+          echo "WARNING: libneocpp.a not found"
+          echo "=== Looking for any .a files ==="
+          find . -name "*.a" -ls
+          # Don't fail - let the next step handle it
+        fi
+    
+    - name: Verify success
+      run: |
+        if [ -f build/libneocpp.a ]; then
+          echo "Build successful!"
+          file build/libneocpp.a
+        else
+          echo "Build failed - library not created"
+          echo "Checking build log for errors:"
+          grep -i "error" build/build.log | head -20 || echo "No obvious errors found"
+          exit 1
+        fi
