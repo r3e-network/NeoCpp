@@ -68,6 +68,10 @@ public:
     static SharedPtr<WitnessRule> deny(const SharedPtr<WitnessCondition>& condition) {
         return std::make_shared<WitnessRule>(WitnessAction::DENY, condition);
     }
+    
+private:
+    /// Parse condition from JSON
+    static SharedPtr<WitnessCondition> parseConditionFromJson(const nlohmann::json& json);
 };
 
 } // namespace neocpp

@@ -1,6 +1,8 @@
 #include "neocpp/protocol/core/witnessrule/witness_rule.hpp"
+#include "neocpp/protocol/core/witnessrule/witness_condition.hpp"
 #include "neocpp/serialization/binary_writer.hpp"
 #include "neocpp/serialization/binary_reader.hpp"
+#include "neocpp/utils/hex.hpp"
 
 namespace neocpp {
 
@@ -42,10 +44,88 @@ SharedPtr<WitnessRule> WitnessRule::fromJson(const nlohmann::json& json) {
         rule->action_ = witnessActionFromString(json["action"].get<std::string>());
     }
     
-    // Condition parsing would need to be implemented based on type
-    // This is simplified for now
+    // Parse condition based on type
+    if (json.contains("condition") && !json["condition"].is_null()) {
+        rule->condition_ = parseConditionFromJson(json["condition"]);
+    }
     
     return rule;
+}
+
+SharedPtr<WitnessCondition> WitnessRule::parseConditionFromJson(const nlohmann::json& json) {
+    if (!json.contains("type")) {
+        return nullptr;
+    }
+    
+    std::string typeStr = json["type"].get<std::string>();
+    
+    if (typeStr == "Boolean") {
+        bool value = json.value("value", false);
+        return std::make_shared<BooleanCondition>(value);
+    }
+    else if (typeStr == "Not") {
+        if (json.contains("expression")) {
+            auto expr = parseConditionFromJson(json["expression"]);
+            return std::make_shared<NotCondition>(expr);
+        }
+    }
+    else if (typeStr == "And") {
+        if (json.contains("expressions") && json["expressions"].is_array()) {
+            std::vector<SharedPtr<WitnessCondition>> expressions;
+            for (const auto& expr : json["expressions"]) {
+                auto condition = parseConditionFromJson(expr);
+                if (condition) {
+                    expressions.push_back(condition);
+                }
+            }
+            return std::make_shared<AndCondition>(expressions);
+        }
+    }
+    else if (typeStr == "Or") {
+        if (json.contains("expressions") && json["expressions"].is_array()) {
+            std::vector<SharedPtr<WitnessCondition>> expressions;
+            for (const auto& expr : json["expressions"]) {
+                auto condition = parseConditionFromJson(expr);
+                if (condition) {
+                    expressions.push_back(condition);
+                }
+            }
+            return std::make_shared<OrCondition>(expressions);
+        }
+    }
+    else if (typeStr == "ScriptHash") {
+        if (json.contains("hash")) {
+            std::string hashStr = json["hash"].get<std::string>();
+            Hash160 hash(Hex::decode(hashStr));
+            return std::make_shared<ScriptHashCondition>(hash);
+        }
+    }
+    else if (typeStr == "Group") {
+        if (json.contains("publicKey")) {
+            std::string pubKeyStr = json["publicKey"].get<std::string>();
+            Bytes pubKey = Hex::decode(pubKeyStr);
+            return std::make_shared<GroupCondition>(pubKey);
+        }
+    }
+    else if (typeStr == "CalledByEntry") {
+        return std::make_shared<CalledByEntryCondition>();
+    }
+    else if (typeStr == "CalledByContract") {
+        if (json.contains("hash")) {
+            std::string hashStr = json["hash"].get<std::string>();
+            Hash160 hash(Hex::decode(hashStr));
+            return std::make_shared<CalledByContractCondition>(hash);
+        }
+    }
+    else if (typeStr == "CalledByGroup") {
+        if (json.contains("publicKey")) {
+            std::string pubKeyStr = json["publicKey"].get<std::string>();
+            Bytes pubKey = Hex::decode(pubKeyStr);
+            return std::make_shared<CalledByGroupCondition>(pubKey);
+        }
+    }
+    
+    return nullptr;
 }
 
 } // namespace neocpp

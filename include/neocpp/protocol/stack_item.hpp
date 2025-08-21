@@ -66,7 +66,7 @@ public:
     }
     
     /// Get as map
-    virtual std::map<StackItemPtr, StackItemPtr> getMap() const {
+    virtual std::map<StackItemPtr, StackItemPtr, std::owner_less<StackItemPtr>> getMap() const {
         throw IllegalStateException("Cannot convert to map");
     }
     
@@ -196,10 +196,10 @@ public:
 /// Map stack item
 class MapStackItem : public StackItem {
 private:
-    std::map<StackItemPtr, StackItemPtr> map_;
+    std::map<StackItemPtr, StackItemPtr, std::owner_less<StackItemPtr>> map_;
     
 public:
-    explicit MapStackItem(const std::map<StackItemPtr, StackItemPtr>& map) : map_(map) {}
+    explicit MapStackItem(const std::map<StackItemPtr, StackItemPtr, std::owner_less<StackItemPtr>>& map) : map_(map) {}
     
     StackItemType getType() const override {
         return StackItemType::MAP;
@@ -211,7 +211,9 @@ public:
         return !map_.empty();
     }
     
-    std::map<StackItemPtr, StackItemPtr> getMap() const override { return map_; }
+    std::map<StackItemPtr, StackItemPtr, std::owner_less<StackItemPtr>> getMap() const override { 
+        return map_; 
+    }
     
     size_t size() const { return map_.size(); }
 };
@@ -259,5 +261,6 @@ public:
     
     std::string getString() const override { return id_; }
 };
+
 
 } // namespace neocpp

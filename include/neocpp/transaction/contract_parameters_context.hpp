@@ -21,6 +21,7 @@ private:
     SharedPtr<Transaction> transaction_;
     std::map<Hash160, std::vector<Bytes>> signatures_;
     std::map<Hash160, Bytes> verificationScripts_;
+    mutable std::map<Hash160, std::pair<int, int>> scriptInfo_; // m,n values for multi-sig
     
 public:
     /// Constructor

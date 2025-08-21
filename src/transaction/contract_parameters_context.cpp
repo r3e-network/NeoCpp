@@ -166,25 +166,78 @@ SharedPtr<ContractParametersContext> ContractParametersContext::fromJson(const n
 }
 
 void ContractParametersContext::parseVerificationScript(const Hash160& scriptHash, const Bytes& script) {
-    // Basic parsing to determine if single-sig or multi-sig
-    // This is simplified - real implementation would need full script parsing
+    // Parse verification script to determine if single-sig or multi-sig
     
     if (script.empty()) {
         return;
     }
     
-    // Check for standard verification scripts
-    // Single-sig: PUSH21 <pubkey> PUSH1 PUSH1 PUSH_SYSCALL <checksig>
-    // Multi-sig: PUSH1 <m> PUSH21 <pubkey1> ... PUSH1 <n> PUSH_SYSCALL <checkmultisig>
+    size_t pos = 0;
     
-    // For now, assume single-sig for simplicity
-    // Real implementation would parse the script properly
+    // Check for standard single-sig pattern:
+    // PUSH21 (0x21) + 33 bytes pubkey + SYSCALL (0x41) + 4 bytes interop hash
+    if (script.size() >= 40 && script[0] == 0x21 && script[34] == 0x41) {
+        // Single-sig verification script
+        scriptInfo_[scriptHash] = {1, 1}; // m=1, n=1
+        return;
+    }
+    
+    // Check for multi-sig pattern:
+    // PUSH<m> + PUSH21 <pubkey1> + ... + PUSH21 <pubkeyn> + PUSH<n> + SYSCALL
+    if (script.size() > 40) {
+        // First byte should be PUSH1-PUSH16 for m value
+        if (script[pos] >= 0x11 && script[pos] <= 0x20) {
+            int m = script[pos] - 0x10; // m value (required signatures)
+            pos++;
+            
+            // Count public keys
+            int pubkeyCount = 0;
+            while (pos < script.size() - 6) { // Need at least 6 bytes for PUSH<n> + SYSCALL
+                if (script[pos] == 0x21) { // PUSH21 (33 bytes)
+                    pos += 34; // Skip opcode + 33 bytes
+                    pubkeyCount++;
+                } else {
+                    break;
+                }
+            }
+            
+            // Check for PUSH<n> and SYSCALL
+            if (pos < script.size() - 5 && 
+                script[pos] >= 0x11 && script[pos] <= 0x20 &&
+                script[pos + 1] == 0x41) {
+                int n = script[pos] - 0x10; // n value (total keys)
+                
+                if (pubkeyCount == n && m <= n) {
+                    // Valid multi-sig script
+                    scriptInfo_[scriptHash] = {m, n};
+                    return;
+                }
+            }
+        }
+    }
+    
+    // Default to single-sig if pattern not recognized
+    scriptInfo_[scriptHash] = {1, 1};
 }
 
 int ContractParametersContext::getRequiredSignatures(const Hash160& scriptHash) const {
     // Parse verification script to determine required signatures
-    // For now, return 1 for single-sig
-    return 1;
+    auto it = scriptInfo_.find(scriptHash);
+    if (it != scriptInfo_.end()) {
+        return it->second.first; // Return m value
+    }
+    
+    // If not parsed yet, try to parse from stored script
+    auto scriptIt = verificationScripts_.find(scriptHash);
+    if (scriptIt != verificationScripts_.end()) {
+        const_cast<ContractParametersContext*>(this)->parseVerificationScript(scriptHash, scriptIt->second);
+        auto infoIt = scriptInfo_.find(scriptHash);
+        if (infoIt != scriptInfo_.end()) {
+            return infoIt->second.first;
+        }
+    }
+    
+    return 1; // Default to single-sig
 }
 
 int ContractParametersContext::getCollectedSignatures(const Hash160& scriptHash) const {

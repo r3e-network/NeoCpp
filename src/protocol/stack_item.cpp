@@ -80,13 +80,16 @@ StackItemPtr StackItem::fromJson(const nlohmann::json& json) {
         return std::make_shared<StructStackItem>(items);
     }
     else if (type == "Map") {
-        // Note: This is a simplified implementation
-        // Real maps would need proper key-value parsing
-        std::map<StackItemPtr, StackItemPtr> map;
-        for (const auto& entry : json["value"]) {
-            auto key = fromJson(entry["key"]);
-            auto value = fromJson(entry["value"]);
-            map[key] = value;
+        // Parse map entries using owner_less comparator for shared_ptr keys
+        std::map<StackItemPtr, StackItemPtr, std::owner_less<StackItemPtr>> map;
+        if (json.contains("value") && json["value"].is_array()) {
+            for (const auto& entry : json["value"]) {
+                if (entry.contains("key") && entry.contains("value")) {
+                    auto key = fromJson(entry["key"]);
+                    auto value = fromJson(entry["value"]);
+                    map[key] = value;
+                }
+            }
         }
         return std::make_shared<MapStackItem>(map);
     }
