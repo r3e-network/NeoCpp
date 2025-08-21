@@ -25,18 +25,44 @@ jobs:
           sudo apt-get install -y nlohmann-json3-dev
         fi
     
+    - name: Check source files
+      run: |
+        echo "=== Checking source files ==="
+        echo "Total .cpp files in src/:"
+        find src -name "*.cpp" | wc -l
+        echo "First 10 source files:"
+        find src -name "*.cpp" | head -10
+        echo "=== Checking if logger.cpp exists ==="
+        ls -la src/logger.cpp || echo "logger.cpp not found!"
+    
     - name: Configure minimal
       run: |
         mkdir build && cd build
+        echo "=== Running CMake configuration ==="
         cmake .. -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF \
                  -DCMAKE_CXX_STANDARD=17 \
-                 -DCMAKE_BUILD_TYPE=Release
+                 -DCMAKE_BUILD_TYPE=Release \
+                 -DCMAKE_VERBOSE_MAKEFILE=ON
+        echo "=== CMake configuration complete ==="
+        echo "=== Checking generated files ==="
+        ls -la
+        echo "=== Checking CMakeCache ==="
+        grep -i "neocpp" CMakeCache.txt || echo "No neocpp references in cache"
     
     - name: Build library
       run: |
         cd build
+        echo "=== Starting build ==="
+        echo "=== Makefile targets: ==="
+        make help || echo "No help target"
+        echo "=== Building neocpp target ==="
         make neocpp VERBOSE=1 2>&1 | tee build.log || true
-        echo "=== Build completed with exit code: $? ==="
+        RESULT=$?
+        echo "=== Build completed with exit code: $RESULT ==="
+        echo "=== Checking what was built ==="
+        find . -name "*.a" -o -name "*.so" | head -20
+        echo "=== Checking CMakeFiles ==="
+        ls -la CMakeFiles/neocpp.dir/ | head -20 || echo "No neocpp.dir found"
     
     - name: Upload build log
       if: always()
