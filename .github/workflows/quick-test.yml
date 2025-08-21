@@ -17,17 +17,24 @@ jobs:
     - name: Install minimal dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ libssl-dev libcurl4-openssl-dev nlohmann-json3-dev
+        sudo apt-get install -y cmake g++ libssl-dev libcurl4-openssl-dev nlohmann-json3-dev pkg-config
     
     - name: Configure with verbose output
       run: |
+        echo "CMake version:"
+        cmake --version
+        echo "Checking for dependencies:"
+        pkg-config --modversion openssl || echo "OpenSSL pkg-config not found"
+        pkg-config --modversion libcurl || echo "CURL pkg-config not found"
+        rm -rf build
         mkdir -p build
         cd build
-        cmake .. -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF || (echo "CMake failed"; if [ -f CMakeFiles/CMakeError.log ]; then cat CMakeFiles/CMakeError.log; fi; exit 1)
+        cmake .. -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF -DCMAKE_BUILD_TYPE=Release || (echo "CMake failed"; if [ -f CMakeFiles/CMakeError.log ]; then cat CMakeFiles/CMakeError.log; fi; if [ -f CMakeFiles/CMakeOutput.log ]; then echo "=== CMakeOutput.log ==="; tail -100 CMakeFiles/CMakeOutput.log; fi; exit 1)
     
     - name: Build library only
       run: |
-        cmake --build build --target neocpp --verbose || (echo "Build failed"; exit 1)
+        cd build
+        make neocpp VERBOSE=1 -j$(nproc) || (echo "Build failed"; exit 1)
     
     - name: Check library
       run: |
