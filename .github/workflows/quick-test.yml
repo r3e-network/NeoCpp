@@ -26,15 +26,26 @@ jobs:
         echo "Checking for dependencies:"
         pkg-config --modversion openssl || echo "OpenSSL pkg-config not found"
         pkg-config --modversion libcurl || echo "CURL pkg-config not found"
+        echo "Source files check:"
+        ls -la src/logger.cpp || echo "logger.cpp not found"
+        find src -name "*.cpp" | wc -l
         rm -rf build
         mkdir -p build
         cd build
         cmake .. -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF -DCMAKE_BUILD_TYPE=Release || (echo "CMake failed"; if [ -f CMakeFiles/CMakeError.log ]; then cat CMakeFiles/CMakeError.log; fi; if [ -f CMakeFiles/CMakeOutput.log ]; then echo "=== CMakeOutput.log ==="; tail -100 CMakeFiles/CMakeOutput.log; fi; exit 1)
+        echo "Generated Makefile targets:"
+        grep "logger" Makefile || echo "No logger references in Makefile"
     
     - name: Build library only
       run: |
         cd build
-        make neocpp VERBOSE=1 -j$(nproc) || (echo "Build failed"; exit 1)
+        echo "Starting build with $(nproc) cores"
+        make neocpp VERBOSE=1 -j$(nproc) 2>&1 | tee build.log
+        if [ ${PIPESTATUS[0]} -ne 0 ]; then
+          echo "Build failed. Last 100 lines of output:"
+          tail -100 build.log
+          exit 1
+        fi
     
     - name: Check library
       run: |
