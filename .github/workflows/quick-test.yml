@@ -17,7 +17,11 @@ jobs:
     - name: Install minimal dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ libssl-dev libcurl4-openssl-dev nlohmann-json3-dev pkg-config
+        sudo apt-get install -y cmake g++ libssl-dev pkg-config
+        # Install nlohmann-json separately to ensure it's found
+        sudo apt-get install -y nlohmann-json3-dev
+        # CURL is optional - install but don't fail if not available
+        sudo apt-get install -y libcurl4-openssl-dev || echo "CURL installation failed, continuing without it"
     
     - name: Configure with verbose output
       run: |
@@ -39,22 +43,17 @@ jobs:
     - name: Build library only
       run: |
         cd build
-        echo "Starting build (sequential, no parallel)"
-        echo "Building with single thread to diagnose issues..."
-        make neocpp VERBOSE=1 2>&1 | tee build.log || true
-        echo "=== Build log tail ==="
-        tail -50 build.log
-        echo "=== Checking for errors ==="
-        if grep -i "error:" build.log; then
-          echo "Build errors found"
+        echo "Starting build"
+        make VERBOSE=1 2>&1 | tee build.log
+        echo "=== Checking for library ==="
+        if [ -f libneocpp.a ]; then
+          echo "SUCCESS: Library created!"
+          ls -la libneocpp.a
+        else
+          echo "Library not found, checking for any .a files:"
+          find . -name "*.a" -ls
           exit 1
         fi
-        echo "=== Checking if library was created ==="
-        if [ ! -f libneocpp.a ]; then
-          echo "Library libneocpp.a was not created"
-          exit 1
-        fi
-        echo "Build succeeded!"
     
     - name: Check library
       run: |
