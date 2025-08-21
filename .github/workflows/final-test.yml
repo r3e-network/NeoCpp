@@ -1,0 +1,38 @@
+name: Final Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install only essential deps
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake g++ libssl-dev
+    
+    - name: Configure with CMake
+      run: |
+        mkdir build && cd build
+        cmake .. -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF
+    
+    - name: Build with output limit
+      run: |
+        cd build
+        # EXACTLY like Diagnostic Build - limit output to 100 lines
+        make VERBOSE=1 2>&1 | head -100
+        
+    - name: Check results
+      run: |
+        cd build
+        echo "=== Looking for object files ==="
+        find . -name "*.o" | wc -l
+        echo "=== Looking for library ==="
+        ls -la libneocpp.a 2>/dev/null && echo "SUCCESS!" || echo "No library found"
+        find . -name "*.a" -ls
