@@ -42,7 +42,11 @@ bool AddressUtils::isValidAddress(const std::string& address) {
         return !decoded.empty() && 
                decoded.size() == 21 && 
                decoded[0] == getAddressVersion();
-    } catch (...) {
+    } catch (const IllegalArgumentException&) {
+        // Invalid Base58 format or checksum
+        return false;
+    } catch (const std::exception&) {
+        // Other decoding errors
         return false;
     }
 }

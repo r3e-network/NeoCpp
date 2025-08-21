@@ -1,6 +1,8 @@
 #include "neocpp/protocol/http_service.hpp"
 #include "neocpp/exceptions.hpp"
 #include <sstream>
+#include <mutex>
+#include <cstdlib>
 
 #ifdef HAVE_CURL
 #include <curl/curl.h>
@@ -20,12 +22,13 @@ static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::stri
 HttpService::HttpService(const std::string& baseUrl) 
     : baseUrl_(baseUrl) {
 #ifdef HAVE_CURL
-    // Initialize CURL globally (only needs to be done once)
-    static bool curlInitialized = false;
-    if (!curlInitialized) {
+    // Thread-safe CURL initialization using std::once_flag
+    static std::once_flag curlInitFlag;
+    std::call_once(curlInitFlag, []() {
         curl_global_init(CURL_GLOBAL_DEFAULT);
-        curlInitialized = true;
-    }
+        // Register cleanup handler
+        std::atexit([]() { curl_global_cleanup(); });
+    });
 #endif
 }
 

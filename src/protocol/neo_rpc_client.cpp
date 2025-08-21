@@ -8,6 +8,7 @@
 #include "neocpp/utils/base64.hpp"
 #include "neocpp/types/contract_parameter.hpp"
 #include "neocpp/exceptions.hpp"
+#include "neocpp/logger.hpp"
 #include <sstream>
 
 namespace neocpp {

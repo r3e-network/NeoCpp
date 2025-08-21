@@ -75,7 +75,14 @@ bool Account::unlock(const std::string& password) {
         keyPair_ = std::make_shared<ECKeyPair>(NEP2::decryptToKeyPair(encryptedPrivateKey_, password));
         isLocked_ = false;
         return true;
-    } catch (...) {
+    } catch (const NEP2Exception&) {
+        // Invalid password or corrupted encrypted key
+        return false;
+    } catch (const CryptoException&) {
+        // Other crypto errors during decryption
+        return false;
+    } catch (const std::exception&) {
+        // Other unexpected errors
         return false;
     }
 }
